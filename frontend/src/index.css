@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+body {
+  @apply bg-abyss text-parchment font-body antialiased;
+  background-image: radial-gradient(circle at 15% 0%, rgba(34,211,238,0.06), transparent 45%),
+    radial-gradient(circle at 85% 100%, rgba(251,113,133,0.05), transparent 45%);
+}
+
+::selection { background: rgba(34,211,238,0.3); }
+
+.leaflet-container { background: #0B1220 !important; }
+.leaflet-popup-content-wrapper { background: #101A2C; color: #E8E2D0; border: 1px solid #1E2A40; }
+.leaflet-popup-tip { background: #101A2C; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
