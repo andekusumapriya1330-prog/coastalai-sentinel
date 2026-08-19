@@ -15,7 +15,7 @@ async function request(path, { method = "GET", body, token } = {}) {
 }
 
 export const api = {
-  login: (email, password) => request("/auth/login", { method: "POST", body: { email, password } }),
+  login: (email) => request("/auth/login", { method: "POST", body: { email } }),
   getRegions: (token) => request("/regions", { token }),
   getAlerts: (token, params = {}) => {
     const qs = new URLSearchParams(params).toString();

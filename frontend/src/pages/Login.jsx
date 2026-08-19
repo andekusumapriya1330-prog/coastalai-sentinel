@@ -12,8 +12,7 @@ const DEMO_ACCOUNTS = [
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("officer@coastalai.gov");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +21,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email);
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -47,17 +46,9 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
+              placeholder="you@example.com"
               required
-            />
-          </div>
-          <div>
-            <label className="text-xs text-mute uppercase tracking-wide">Password</label>
-            <input
-              className="mt-1 w-full bg-ink border border-line rounded-md px-3 py-2 text-sm text-parchment focus:outline-none focus:ring-2 focus:ring-chart"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              required
+              autoFocus
             />
           </div>
           {error && <div className="text-coral text-sm">{error}</div>}
@@ -68,10 +59,13 @@ export default function Login() {
           >
             {loading ? "Signing in…" : "Sign in"}
           </button>
+          <div className="text-xs text-mute text-center">
+            No password needed — any email works. Full access is granted automatically.
+          </div>
         </form>
 
         <div className="mt-6 border border-line rounded-lg p-4 bg-panel/30">
-          <div className="text-xs text-mute uppercase tracking-wide mb-2">Demo accounts (password: demo1234)</div>
+          <div className="text-xs text-mute uppercase tracking-wide mb-2">Or use a demo role account</div>
           <div className="grid grid-cols-1 gap-1">
             {DEMO_ACCOUNTS.map((a) => (
               <button

@@ -14,8 +14,8 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem("coastalai_session");
   }, [session]);
 
-  async function login(email, password) {
-    const { token, user } = await api.login(email, password);
+  async function login(email) {
+    const { token, user } = await api.login(email);
     setSession({ token, user });
     return user;
   }
