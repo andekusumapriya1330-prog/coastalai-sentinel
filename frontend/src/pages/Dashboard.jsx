@@ -12,32 +12,44 @@ export default function Dashboard() {
   const role = session?.user?.role;
   const [regions, setRegions] = useState([]);
   const [alerts, setAlerts] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(""); // "" = All Regions
   const [triggering, setTriggering] = useState(false);
   const [lastRun, setLastRun] = useState(null);
 
-  async function load() {
-    const [r, a] = await Promise.all([api.getRegions(token), api.getAlerts(token)]);
+  async function loadRegions() {
+    const r = await api.getRegions(token);
     setRegions(r.regions);
+  }
+
+  async function loadAlerts(regionId) {
+    const a = await api.getAlerts(token, regionId ? { regionId } : {});
     setAlerts(a.alerts.slice(0, 6));
   }
 
   useEffect(() => {
-    load();
+    loadRegions();
   }, []);
+
+  // Re-fetch the alert feed whenever the selected region changes.
+  useEffect(() => {
+    loadAlerts(selectedId);
+  }, [selectedId]);
 
   async function handleTrigger() {
     setTriggering(true);
     try {
       const result = await api.triggerIngestion(token, selectedId || undefined);
       setLastRun(result);
-      await load();
+      await loadRegions();
+      await loadAlerts(selectedId);
     } finally {
       setTriggering(false);
     }
   }
 
-  const highRisk = regions.filter((r) => r.riskLevel === "high").length;
+  const selectedRegion = regions.find((r) => r.id === selectedId) || null;
+  const visibleRegions = selectedRegion ? [selectedRegion] : regions;
+  const highRisk = visibleRegions.filter((r) => r.riskLevel === "high").length;
 
   return (
     <div>
@@ -45,15 +57,27 @@ export default function Dashboard() {
         eyebrow="Live overview"
         title="Regional Monitoring"
         action={
-          (role === "officer" || role === "admin") && (
-            <button
-              onClick={handleTrigger}
-              disabled={triggering}
-              className="bg-chart text-ink text-sm font-semibold px-4 py-2 rounded-md hover:bg-chart2 disabled:opacity-60"
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedId}
+              onChange={(e) => setSelectedId(e.target.value)}
+              className="bg-ink border border-line rounded-md px-3 py-2 text-sm text-parchment focus:outline-none focus:ring-2 focus:ring-chart"
             >
-              {triggering ? "Running ingestion…" : "Run ingestion cycle"}
-            </button>
-          )
+              <option value="">All regions</option>
+              {regions.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            {(role === "officer" || role === "admin") && (
+              <button
+                onClick={handleTrigger}
+                disabled={triggering}
+                className="bg-chart text-ink text-sm font-semibold px-4 py-2 rounded-md hover:bg-chart2 disabled:opacity-60"
+              >
+                {triggering ? "Running ingestion…" : "Run ingestion cycle"}
+              </button>
+            )}
+          </div>
         }
       />
 
@@ -73,7 +97,12 @@ export default function Dashboard() {
         )}
 
         <div className="grid grid-cols-4 gap-4">
-          <StatCard label="Monitored regions" value={regions.length} tone="chart" />
+          <StatCard
+            label={selectedRegion ? "Selected region" : "Monitored regions"}
+            value={selectedRegion ? selectedRegion.riskLevel.toUpperCase() : regions.length}
+            sub={selectedRegion ? selectedRegion.name : undefined}
+            tone="chart"
+          />
           <StatCard label="High risk zones" value={highRisk} tone="coral" />
           <StatCard label="Active alerts" value={alerts.length} tone="amber" />
           <StatCard label="Platform uptime target" value="99.5%" sub="NFR — availability" tone="chart2" />
@@ -81,10 +110,12 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-3 gap-6" style={{ height: "440px" }}>
           <div className="col-span-2 h-full">
-            <MapView regions={regions} onSelect={setSelectedId} selectedId={selectedId} />
+            <MapView regions={visibleRegions} onSelect={setSelectedId} selectedId={selectedId} />
           </div>
           <div className="space-y-3 overflow-y-auto pr-1">
-            <div className="text-xs text-mute uppercase tracking-wide">Recent alerts</div>
+            <div className="text-xs text-mute uppercase tracking-wide">
+              {selectedRegion ? `Alerts — ${selectedRegion.name}` : "Recent alerts — all regions"}
+            </div>
             {alerts.map((a) => (
               <AlertCard key={a.id} alert={a} />
             ))}
